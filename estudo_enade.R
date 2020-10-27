@@ -20,5 +20,24 @@ library(gridExtra)
 setwd("~/Documentos/DataScienceFB/Estatistica/projeto-final-ds-estatisica")
 getwd()
 
-enade_2017_table = read_table("MICRODADOS_ENADE_2017.txt")
+#Carregando o Banco de Dados
+enade_2017_table = read.table("MICRODADOS_ENADE_2017.txt", 
+                              header = TRUE, 
+                              sep = ";", 
+                              dec = ",", 
+                              colClasses = c(NT_OBJ_FG="numeric"))
+
 enade_2017_csv = read_csv2("MICRODADOS_ENADE_2017.txt")
+
+enade_2017_mil_linhas = head(enade_2017_table, 1000)
+# write_csv(enade_2017_mil_linhas, "enade_2017_mil_linhas.csv")
+
+#Dimensões do data frame
+dim(enade_2017_mil_linhas)
+
+#Filtragem de variaveis
+enade_filtrado = dplyr::select(enade_2017_csv, CO_GRUPO, CO_REGIAO_CURSO, NU_IDADE)
+View(enade_filtrado)
+names(enade_filtrado)
+
+enade_ti = filter(enade_2017_csv, CO_GRUPO == 72)
