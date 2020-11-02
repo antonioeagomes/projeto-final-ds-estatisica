@@ -1,0 +1,28 @@
+---
+title: "Relatório ENADE 2017"
+author: "Antonio Emmanuel de Araujo Gomes"
+date: "29/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Documentos/DataScienceFB/Estatistica/projeto-final-ds-estatisica")
+```
+## Instalando e carregando pacotes que serão utilizados no projeto.
+```{r eval=FALSE}
+vetor_pacotes = c("readr", "ggplot2", "plotly", "psych", "e1071", "dplyr", 
+                  "Hmisc", "DescTools", "esquisse", "gridExtra", "devtools", 
+                  "tidyverse")
+# install.packages(vetor_pacotes)
+lapply(vetor_pacotes, require, character.only = TRUE)
+```
+
+## Importando o banco ENADE
+O arquivo *MICRODADOS_ENADE_2017.txt* foi obtido em **http://portal.inep.gov.br/microdados**
+
+(*microdados_Enade_2017_portal_2018.10.09.zip*)
+
+```{r eval=FALSE}
+enade_2017 = read_csv2("MICRODADOS_ENADE_2017.txt")
+```
