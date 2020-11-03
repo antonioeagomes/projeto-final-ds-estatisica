@@ -13,16 +13,116 @@ knitr::opts_knit$set(root.dir = "~/Documentos/DataScienceFB/Estatistica/projeto-
 ```{r eval=FALSE}
 vetor_pacotes = c("readr", "ggplot2", "plotly", "psych", "e1071", "dplyr", 
                   "Hmisc", "DescTools", "esquisse", "gridExtra", "devtools", 
-                  "tidyverse")
+                  "tidyverse", "kableExtra")
 # install.packages(vetor_pacotes)
 lapply(vetor_pacotes, require, character.only = TRUE)
 ```
 
 ## Importando o banco ENADE
-O arquivo *MICRODADOS_ENADE_2017.txt* foi obtido em **http://portal.inep.gov.br/microdados**
+O arquivo *"MICRODADOS_ENADE_2017.txt"* foi obtido em **http://portal.inep.gov.br/microdados**
 
 (*microdados_Enade_2017_portal_2018.10.09.zip*)
 
 ```{r eval=FALSE}
 enade_2017 = read_csv2("MICRODADOS_ENADE_2017.txt")
 ```
+## Filtrando e classificando as variáveis quanto ao tipo.
+**NT_OBJ_FG** - *"Nota bruta na parte objetiva da formação geral. (valor de 0 a 100)"* - Variável Quantitativa Contínua, por ser obtida por uma medição. Geralmente representada por números reais.
+
+**CO_GRUPO** - *"Código da área de enquadramento do curso no Enade"* - Variável Qualitativa Nominal, por não ser possível determinar uma ordenação.
+
+**CO_REGIAO_CURSO** - *"Código da região de funcionamento do curso"* - Variável Qualitativa Nominal, por não ser possível determinar uma ordenação.
+
+**QE_I02** - *"Qual é a sua cor ou raça?"* - Variável Qualitativa Nominal, por não ser possível determinar uma ordenação.
+
+**CO_TURNO_GRADUACAO** - *"Código do turno de graduação"* - Variável Qualitativa Nominal, por não ser possível determinar uma ordenação.
+
+**QE_I01** - *"Qual o seu estado civil?"* - Variável Qualitativa Nominal, por não ser possível determinar uma ordenação.
+
+**QE_I08** - *"Qual a renda total de sua família, incluindo seus rendimentos?"* - Variável Quantitativa Contínua, por ser obtida por uma medição. Geralmente representada por números reais.,
+
+**QE_I21** - *"Alguém em sua família concluiu um curso superior?"* - Variavel Qualitativa Ordinal, a qual é possível ordenar.
+
+**QE_I22** - *"Excetuando-se os livros indicados na bibliografia do seu curso, quantos livros você leu neste ano?"* - Por ser uma estimativa (Um ou dois/Mais de oito), eu entendo que seja uma Variável Qualitativa Ordinal. Entretanto, se a quantidade de livros lidos no ano fosse uma informação exata ( Um livro, dois livros) seria uma variável Quantitativa Discreta.
+
+**QE_I23** - *"Quantas horas por semana, aproximadamente, você dedicou aos estudos, excetuando as horas de aula?"* - Por ser uma estimativa (De uma a três/ Mais de doze), eu entendo que seja uma Variável Qualitativa Ordinal. Entretanto, se a quantidade de livros lidos no ano fosse uma informação exata ( Uma hora de estudo, Duas horas de estudo) seria uma variável Quantitativa Discreta.
+
+**NU_IDADE** - *"Idade do inscrito em 26/11/2017"* - Variavel Quantitativa Discreta. Por ser obtida a partir da contagem de anos do estudante na data informada. 
+
+```{r eval=FALSE}
+enade_2017_filtrados = enade_2017 %>% dplyr::select(NT_OBJ_FG, CO_GRUPO, CO_REGIAO_CURSO, QE_I02, CO_TURNO_GRADUACAO, TP_SEXO, QE_I01, QE_I08, QE_I21, QE_I22, QE_I23)
+```
+O arquivo *"Dicionário de variaveis dos Microdados do Enade_Edição 2017.ods"* foi obtido em **http://portal.inep.gov.br/microdados**
+
+(*microdados_Enade_2017_portal_2018.10.09.zip*)
+
+## Escolhendo um curso do ENADE
+O curso escolhido é o curso de *"Licenciatura em História"*, representado pelo código **2402**
+```{r eval=FALSE}
+enade_historia_2017 = enade_2017_filtrados %>% filter(CO_GRUPO == 2402)
+```
+
+## Transformando as variáveis com rótulos legíveis, para melhor interpretação.
+```{r eval=FALSE}
+#Região
+enade_historia_2017 = mutate(enade_historia_2017, CO_REGIAO_CURSO = case_when(CO_REGIAO_CURSO == 1 ~ "Norte",
+                                                           CO_REGIAO_CURSO == 2 ~ "Nordeste",
+                                                           CO_REGIAO_CURSO == 3 ~ "Sudeste",
+                                                           CO_REGIAO_CURSO == 4 ~ "Sul",
+                                                           CO_REGIAO_CURSO == 5 ~ "Centro-Oeste",
+                                                           TRUE ~ as.character(CO_REGIAO_CURSO)) )
+#Sexo
+enade_historia_2017 = mutate(enade_historia_2017, TP_SEXO = case_when (TP_SEXO == "M" ~ "Masculino",
+                                                           TP_SEXO == "F" ~ "Feminino",
+                                                           TRUE ~ as.character(TP_SEXO)) )
+#Estado civil
+enade_historia_2017 = mutate(enade_historia_2017, QE_I01 = case_when(QE_I01 == "A" ~ "Solteiro(a)",
+                                                           QE_I01 == "B" ~ "Casado(a)",
+                                                           QE_I01 == "C" ~ "Separado(a) judicialmente/divorciado(a)",
+                                                           QE_I01 == "D" ~ "Viúvo(a)",
+                                                           QE_I01 == "E" ~ "Outro",
+                                                           TRUE ~ as.character(QE_I01)) )
+#Raça / cor
+enade_historia_2017 = mutate(enade_historia_2017, QE_I02 = case_when(QE_I02 == "A" ~ "Branca",
+                                                           QE_I02 == "B" ~ "Preta",
+                                                           QE_I02 == "C" ~ "Amarela",
+                                                           QE_I02 == "D" ~ "Parda",
+                                                           QE_I02 == "E" ~ "Indígena",
+                                                           QE_I02 == "F" ~ "Não quero declarar",
+                                                           TRUE ~ as.character(QE_I02)))
+#Período
+enade_historia_2017 = mutate(enade_historia_2017, CO_TURNO_GRADUACAO = case_when(CO_TURNO_GRADUACAO == 1 ~ "Matutino",
+                                                           CO_TURNO_GRADUACAO == 2 ~ "Vespertino",
+                                                           CO_TURNO_GRADUACAO == 3 ~ "Integral",
+                                                           CO_TURNO_GRADUACAO == 4 ~ "Noturno",
+                                                           TRUE ~ as.character(CO_TURNO_GRADUACAO)))
+#Renda total da família
+enade_historia_2017 = mutate(enade_historia_2017, QE_I08 = case_when(QE_I08 == "A" ~ "Até 1,5 salário mínimo (até R$ 1.405,50)",
+                                                           QE_I08 == "B" ~ "De 1,5 a 3 salários mínimos (R$ 1.405,51 a R$ 2.811,00)",
+                                                           QE_I08 == "C" ~ "De 3 a 4,5 salários mínimos (R$ 2.811,01 a R$ 4.216,50)",
+                                                           QE_I08 == "D" ~ "De 4,5 a 6 salários mínimos (R$ 4.216,51 a R$ 5.622,00).",
+                                                           QE_I08 == "E" ~ "De 6 a 10 salários mínimos (R$ 5. 622,01 a R$ 9.370,00)",
+                                                           QE_I08 == "F" ~ "De 10 a 30 salários mínimos (R$ 9.370,01 a R$ 28.110,00)",
+                                                           QE_I08 == "G" ~ "Acima de 30 salários mínimos (mais de R$ 28.110,00)",
+                                                           TRUE ~ as.character(QE_I08)))
+#Alguém da família concluiu ensino superior
+enade_historia_2017 = mutate(enade_historia_2017, QE_I21 = case_when(QE_I21 == "A" ~ "Sim",
+                                                           QE_I21 == "B" ~ "Não",
+                                                           TRUE ~ as.character(QE_I21)))
+#Quantos livros foram lidos em 2017, exceto os livros relacionados ao curso
+enade_historia_2017 = mutate(enade_historia_2017, QE_I22 = case_when(QE_I22 == "A" ~ "Nenhum",
+                                                           QE_I22 == "B" ~ "Um ou dois",
+                                                           QE_I22 == "C" ~ "De três a cinco",
+                                                           QE_I22 == "D" ~ "De seis a oito",
+                                                           QE_I22 == "E" ~ "Mais de oito",
+                                          							   TRUE ~ as.character(QE_I22)))
+# Quantas horas de estudo por semana. Aproximadamente.
+enade_historia_2017 = mutate(enade_historia_2017, QE_I23 = case_when(QE_I23 == "A" ~ "Nenhuma, apenas assisto às aulas",
+                                                           QE_I23 == "B" ~ "De uma a três",
+                                                           QE_I23 == "C" ~ "De quatro a sete",
+                                                           QE_I23 == "D" ~ "De oito a doze",
+                                                           QE_I23 == "E" ~ "Mais de doze",
+                                          							   TRUE ~ as.character(QE_I23)))
+
+```
+## Resumo e remoção de valores faltantes (missing values)
