@@ -10,21 +10,39 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = "~/Documentos/DataScienceFB/Estatistica/projeto-final-ds-estatisica")
 ```
 ## Instalando e carregando pacotes que serão utilizados no projeto.
-```{r eval=FALSE}
-vetor_pacotes = c("readr", "ggplot2", "plotly", "psych", "e1071", "dplyr", 
-                  "Hmisc", "DescTools", "esquisse", "gridExtra", "devtools", 
-                  "tidyverse", "kableExtra")
+```{r include=FALSE}
+vetor_pacotes = c(
+  "readr",
+  "ggplot2",
+  "plotly",
+  "psych",
+  "e1071",
+  "dplyr",
+  "Hmisc",
+  "DescTools",
+  "esquisse",
+  "gridExtra",
+  "devtools",
+  "tidyverse",
+  "kableExtra"
+)
 # install.packages(vetor_pacotes)
 lapply(vetor_pacotes, require, character.only = TRUE)
 ```
+```{r}
+  #Lista de pacotes instalados
+vetor_pacotes
 
+```
 ## Importando o banco ENADE
 O arquivo *"MICRODADOS_ENADE_2017.txt"* foi obtido em **http://portal.inep.gov.br/microdados**
 
 (*microdados_Enade_2017_portal_2018.10.09.zip*)
 
-```{r eval=FALSE}
+```{r}
 enade_2017 = read_csv2("MICRODADOS_ENADE_2017.txt")
+# Exibindo uma linha do arquivo MICRODADOS_ENADE_2017.txt
+dim(enade_2017)
 ```
 ## Filtrando e classificando as variáveis quanto ao tipo.
 **NT_OBJ_FG** - *"Nota bruta na parte objetiva da formação geral. (valor de 0 a 100)"* - Variável Quantitativa Contínua, por ser obtida por uma medição. Geralmente representada por números reais.
@@ -49,8 +67,25 @@ enade_2017 = read_csv2("MICRODADOS_ENADE_2017.txt")
 
 **NU_IDADE** - *"Idade do inscrito em 26/11/2017"* - Variavel Quantitativa Discreta. Por ser obtida a partir da contagem de anos do estudante na data informada. 
 
-```{r eval=FALSE}
-enade_2017_filtrados = enade_2017 %>% dplyr::select(NT_OBJ_FG, CO_GRUPO, CO_REGIAO_CURSO, QE_I02, CO_TURNO_GRADUACAO, TP_SEXO, QE_I01, QE_I08, QE_I21, QE_I22, QE_I23)
+```{r}
+enade_2017_filtrados = enade_2017 %>% dplyr::select(
+  NT_OBJ_FG,
+  NT_OBJ_CE,
+  NT_GER,
+  CO_GRUPO,
+  CO_REGIAO_CURSO,
+  QE_I02,
+  CO_TURNO_GRADUACAO,
+  TP_SEXO,
+  QE_I01,
+  QE_I08,
+  QE_I21,
+  QE_I22,
+  QE_I23,
+  NU_IDADE
+)
+# Exibindo uma linha do arquivo, filtrando as 11 colunas listadas
+dim(enade_2017_filtrados)
 ```
 O arquivo *"Dicionário de variaveis dos Microdados do Enade_Edição 2017.ods"* foi obtido em **http://portal.inep.gov.br/microdados**
 
@@ -58,71 +93,324 @@ O arquivo *"Dicionário de variaveis dos Microdados do Enade_Edição 2017.ods"*
 
 ## Escolhendo um curso do ENADE
 O curso escolhido é o curso de *"Licenciatura em História"*, representado pelo código **2402**
-```{r eval=FALSE}
+```{r}
 enade_historia_2017 = enade_2017_filtrados %>% filter(CO_GRUPO == 2402)
+# Licenciatura História 2017 - 18.531 registros
+dim(enade_historia_2017)
 ```
-
 ## Transformando as variáveis com rótulos legíveis, para melhor interpretação.
-```{r eval=FALSE}
+```{r}
 #Região
-enade_historia_2017 = mutate(enade_historia_2017, CO_REGIAO_CURSO = case_when(CO_REGIAO_CURSO == 1 ~ "Norte",
-                                                           CO_REGIAO_CURSO == 2 ~ "Nordeste",
-                                                           CO_REGIAO_CURSO == 3 ~ "Sudeste",
-                                                           CO_REGIAO_CURSO == 4 ~ "Sul",
-                                                           CO_REGIAO_CURSO == 5 ~ "Centro-Oeste",
-                                                           TRUE ~ as.character(CO_REGIAO_CURSO)) )
+enade_historia_2017 = enade_historia_2017 %>%  mutate(
+  Regiao = case_when(
+    CO_REGIAO_CURSO == 1 ~ "Norte",
+    CO_REGIAO_CURSO == 2 ~ "Nordeste",
+    CO_REGIAO_CURSO == 3 ~ "Sudeste",
+    CO_REGIAO_CURSO == 4 ~ "Sul",
+    CO_REGIAO_CURSO == 5 ~ "Centro-Oeste",
+    TRUE ~ as.character(CO_REGIAO_CURSO)
+  )
+)
 #Sexo
-enade_historia_2017 = mutate(enade_historia_2017, TP_SEXO = case_when (TP_SEXO == "M" ~ "Masculino",
-                                                           TP_SEXO == "F" ~ "Feminino",
-                                                           TRUE ~ as.character(TP_SEXO)) )
+enade_historia_2017 = enade_historia_2017 %>% mutate(Sexo = case_when (
+  TP_SEXO == "M" ~ "Masculino",
+  TP_SEXO == "F" ~ "Feminino",
+  TRUE ~ as.character(TP_SEXO)
+))
 #Estado civil
-enade_historia_2017 = mutate(enade_historia_2017, QE_I01 = case_when(QE_I01 == "A" ~ "Solteiro(a)",
-                                                           QE_I01 == "B" ~ "Casado(a)",
-                                                           QE_I01 == "C" ~ "Separado(a) judicialmente/divorciado(a)",
-                                                           QE_I01 == "D" ~ "Viúvo(a)",
-                                                           QE_I01 == "E" ~ "Outro",
-                                                           TRUE ~ as.character(QE_I01)) )
+enade_historia_2017 = enade_historia_2017 %>% mutate(
+  Estado_Civil = case_when(
+    QE_I01 == "A" ~ "Solteiro(a)",
+    QE_I01 == "B" ~ "Casado(a)",
+    QE_I01 == "C" ~ "Separado(a) judicialmente/divorciado(a)",
+    QE_I01 == "D" ~ "Viúvo(a)",
+    QE_I01 == "E" ~ "Outro",
+    TRUE ~ as.character(QE_I01)
+  )
+)
 #Raça / cor
-enade_historia_2017 = mutate(enade_historia_2017, QE_I02 = case_when(QE_I02 == "A" ~ "Branca",
-                                                           QE_I02 == "B" ~ "Preta",
-                                                           QE_I02 == "C" ~ "Amarela",
-                                                           QE_I02 == "D" ~ "Parda",
-                                                           QE_I02 == "E" ~ "Indígena",
-                                                           QE_I02 == "F" ~ "Não quero declarar",
-                                                           TRUE ~ as.character(QE_I02)))
+enade_historia_2017 = enade_historia_2017 %>% mutate(
+  Raca_Cor = case_when(
+    QE_I02 == "A" ~ "Branca",
+    QE_I02 == "B" ~ "Preta",
+    QE_I02 == "C" ~ "Amarela",
+    QE_I02 == "D" ~ "Parda",
+    QE_I02 == "E" ~ "Indígena",
+    QE_I02 == "F" ~ "Não quero declarar",
+    TRUE ~ as.character(QE_I02)
+  )
+)
 #Período
-enade_historia_2017 = mutate(enade_historia_2017, CO_TURNO_GRADUACAO = case_when(CO_TURNO_GRADUACAO == 1 ~ "Matutino",
-                                                           CO_TURNO_GRADUACAO == 2 ~ "Vespertino",
-                                                           CO_TURNO_GRADUACAO == 3 ~ "Integral",
-                                                           CO_TURNO_GRADUACAO == 4 ~ "Noturno",
-                                                           TRUE ~ as.character(CO_TURNO_GRADUACAO)))
+enade_historia_2017 = enade_historia_2017 %>% mutate(
+  Turno_Graduacao = case_when(
+    CO_TURNO_GRADUACAO == 1 ~ "Matutino",
+    CO_TURNO_GRADUACAO == 2 ~ "Vespertino",
+    CO_TURNO_GRADUACAO == 3 ~ "Integral",
+    CO_TURNO_GRADUACAO == 4 ~ "Noturno",
+    TRUE ~ as.character(CO_TURNO_GRADUACAO)
+  )
+)
 #Renda total da família
-enade_historia_2017 = mutate(enade_historia_2017, QE_I08 = case_when(QE_I08 == "A" ~ "Até 1,5 salário mínimo (até R$ 1.405,50)",
-                                                           QE_I08 == "B" ~ "De 1,5 a 3 salários mínimos (R$ 1.405,51 a R$ 2.811,00)",
-                                                           QE_I08 == "C" ~ "De 3 a 4,5 salários mínimos (R$ 2.811,01 a R$ 4.216,50)",
-                                                           QE_I08 == "D" ~ "De 4,5 a 6 salários mínimos (R$ 4.216,51 a R$ 5.622,00).",
-                                                           QE_I08 == "E" ~ "De 6 a 10 salários mínimos (R$ 5. 622,01 a R$ 9.370,00)",
-                                                           QE_I08 == "F" ~ "De 10 a 30 salários mínimos (R$ 9.370,01 a R$ 28.110,00)",
-                                                           QE_I08 == "G" ~ "Acima de 30 salários mínimos (mais de R$ 28.110,00)",
-                                                           TRUE ~ as.character(QE_I08)))
+enade_historia_2017 = enade_historia_2017 %>%  mutate(
+  Renda_Familiar = case_when(
+    QE_I08 == "A" ~ "Até 1,5 salário mínimo (até R$ 1.405,50)",
+    QE_I08 == "B" ~ "De 1,5 a 3 salários mínimos (R$ 1.405,51 a R$ 2.811,00)",
+    QE_I08 == "C" ~ "De 3 a 4,5 salários mínimos (R$ 2.811,01 a R$ 4.216,50)",
+    QE_I08 == "D" ~ "De 4,5 a 6 salários mínimos (R$ 4.216,51 a R$ 5.622,00).",
+    QE_I08 == "E" ~ "De 6 a 10 salários mínimos (R$ 5.622,01 a R$ 9.370,00)",
+    QE_I08 == "F" ~ "De 10 a 30 salários mínimos (R$ 9.370,01 a R$ 28.110,00)",
+    QE_I08 == "G" ~ "Acima de 30 salários mínimos (mais de R$ 28.110,00)",
+    TRUE ~ as.character(QE_I08)
+  )
+)
 #Alguém da família concluiu ensino superior
-enade_historia_2017 = mutate(enade_historia_2017, QE_I21 = case_when(QE_I21 == "A" ~ "Sim",
-                                                           QE_I21 == "B" ~ "Não",
-                                                           TRUE ~ as.character(QE_I21)))
+enade_historia_2017 = enade_historia_2017 %>% mutate(
+  Alguem_Familia_Ensino_Superior = case_when(
+    QE_I21 == "A" ~ "Sim",
+    QE_I21 == "B" ~ "Não",
+    TRUE ~ as.character(QE_I21)
+  )
+)
 #Quantos livros foram lidos em 2017, exceto os livros relacionados ao curso
-enade_historia_2017 = mutate(enade_historia_2017, QE_I22 = case_when(QE_I22 == "A" ~ "Nenhum",
-                                                           QE_I22 == "B" ~ "Um ou dois",
-                                                           QE_I22 == "C" ~ "De três a cinco",
-                                                           QE_I22 == "D" ~ "De seis a oito",
-                                                           QE_I22 == "E" ~ "Mais de oito",
-                                          							   TRUE ~ as.character(QE_I22)))
+enade_historia_2017 = enade_historia_2017 %>%  mutate(
+  Livros_Lidos_2017 = case_when(
+    QE_I22 == "A" ~ "Nenhum",
+    QE_I22 == "B" ~ "Um ou dois",
+    QE_I22 == "C" ~ "De três a cinco",
+    QE_I22 == "D" ~ "De seis a oito",
+    QE_I22 == "E" ~ "Mais de oito",
+    TRUE ~ as.character(QE_I22)
+  )
+)
 # Quantas horas de estudo por semana. Aproximadamente.
-enade_historia_2017 = mutate(enade_historia_2017, QE_I23 = case_when(QE_I23 == "A" ~ "Nenhuma, apenas assisto às aulas",
-                                                           QE_I23 == "B" ~ "De uma a três",
-                                                           QE_I23 == "C" ~ "De quatro a sete",
-                                                           QE_I23 == "D" ~ "De oito a doze",
-                                                           QE_I23 == "E" ~ "Mais de doze",
-                                          							   TRUE ~ as.character(QE_I23)))
+enade_historia_2017 = enade_historia_2017 %>%  mutate(
+  Horas_Estudo_Semana = case_when(
+    QE_I23 == "A" ~ "Nenhuma, apenas assisto às aulas",
+    QE_I23 == "B" ~ "De uma a três",
+    QE_I23 == "C" ~ "De quatro a sete",
+    QE_I23 == "D" ~ "De oito a doze",
+    QE_I23 == "E" ~ "Mais de doze",
+    TRUE ~ as.character(QE_I23)
+  )
+)
+```
+```{r include=FALSE}
+# Removendo as colunas
 
+enade_historia_2017$CO_REGIAO_CURSO = NULL
+enade_historia_2017$TP_SEXO = NULL
+enade_historia_2017$QE_I01 = NULL
+enade_historia_2017$QE_I02 = NULL
+enade_historia_2017$QE_I08 = NULL
+enade_historia_2017$QE_I21 = NULL
+enade_historia_2017$QE_I22 = NULL
+enade_historia_2017$QE_I23 = NULL
+enade_historia_2017$CO_TURNO_GRADUACAO = NULL
+```
+```{r}
+# Licenciatura História 2017 com as variáveis de forma legível - 5 registros
+kbl(head(enade_historia_2017, 5), caption = "ENADE 2017 - História (Licenciatura) - 5 registros") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 ## Resumo e remoção de valores faltantes (missing values)
+Utilizando a função *describe* do pacote *Hmisc* e a função nativa *summary* para uma análise descritiva.
+
+Verificando a quantidade de valores ausentes/missing values e os removendo.
+```{r}
+#Verificando a quantidade de valores ausentes por variável
+valores_ausentes = enade_historia_2017 %>%
+  select(everything()) %>%  
+  summarise_all(list(~sum(is.na(.))))
+valores_ausentes %>% kbl(caption = "Quantidade de valores ausentes por variável") %>% kable_styling(full_width = F, font_size = 14)
+```
+``` {r}
+enade_historia_2017_Sem_NA = enade_historia_2017 %>% na.omit()
+#Quantidade de itens removidos
+dim(enade_historia_2017)[1]
+dim(enade_historia_2017_Sem_NA)[1]
+dim(enade_historia_2017)[1] - dim(enade_historia_2017_Sem_NA)[1]
+```
+Obtemos alguns insights, como nota dos estudantes de História foi 44.34 Aproximadamente 39% dos futuros professores de História estão na região Sudeste. 43% se declara como Branca, têm média de idade de 30 anos. Por fim, o curso de licenciatura em História é bem divido entre homens e mulhes, com 50% dos alunos de cada sexo.
+
+```{r}
+dim(enade_historia_2017_Sem_NA)
+descr = describe(enade_historia_2017_Sem_NA)
+descr$NT_OBJ_CE
+descr$Regiao
+descr$Raca_Cor
+descr$Sexo
+descr$NU_IDADE
+```
+```{r}
+summary(enade_historia_2017_Sem_NA$NT_GER)
+```
+```{r}
+enade_historia_2017_Sem_NA %>% select(NT_OBJ_CE) %>%
+  summarise(
+    Quantidade = n(),
+    Media = mean(NT_OBJ_CE),
+    Mediana = median(NT_OBJ_CE),
+    Moda = Mode(NT_OBJ_CE),
+    CV = sd(NT_OBJ_CE) / Media * 100,
+    Assimetria = skewness(NT_OBJ_CE),
+    Curtose = kurtosis(NT_OBJ_CE)
+  ) %>%  kbl %>%
+  kable_styling(full_width = F)
+```
+Com **Mediana** > **Média** > **Moda** (45.8 > 44.33 > 41.7) , uma distribuição quase simétrica, com uma pequena assimetria positiva (*Média* - *Moda* > 0), conforme o cálculo de coeficiente de peason. O coeficiente de variação indica uma alta dispersão na nota bruta. E a medida de curtose indica que, embora os dados estejam próximos da moda, a curva estaria um pouco achatada (Platicúrtica).
+```{r}
+hstgrm = ggplot(enade_historia_2017_Sem_NA, aes(x = NT_OBJ_CE)) +
+  geom_histogram(color = "black",
+                 fill = "green",
+                 bins = 50,
+                 aes(y = (..count..) / sum(..count..))) +
+  ggtitle("Histograma da nota bruta dos estudantes de Licenciatura em História") +
+  xlab("nota") +
+  ylab("Frequência relativa")
+ggplotly(hstgrm)
+
+dnsdd = ggplot(enade_historia_2017_Sem_NA, aes(x = NT_OBJ_CE)) +
+  geom_density(col = 2, size = 1, aes(y = 27 * (..count..) /
+                                        sum(..count..))) +
+  ggtitle("Curva de densidade da nota bruta dos estudantes de História (Licenciatura)") +
+  xlab("nota") +
+  ylab("Frequência relativa")
+ggplotly(dnsdd)
+
+hstdns = ggplot(enade_historia_2017_Sem_NA, aes(x = NT_OBJ_CE)) +
+  geom_histogram(color = "black",
+                 fill = "lightblue",
+                 bins = 50,
+                 aes(y = (..count..) / sum(..count..))) +
+  geom_density(col = 2, size = 1,
+               aes(y = 27 * (..count..) / sum(..count..))) +
+  ggtitle("Histograma e curva de densidade da nota dos futuros professores de História") +
+  xlab("nota") +
+  ylab("Frequência relativa")
+ggplotly(hstdns)
+
+grid.arrange(hstgrm,
+             dnsdd,
+             hstdns,
+             nrow = 3, ncol = 1)
+```
+## Continuação das análises
+```{r}
+prop.table(table(enade_historia_2017_Sem_NA$Turno_Graduacao,
+      enade_historia_2017_Sem_NA$Raca_Cor)) %>% kbl %>% kable_styling()
+```
+```{r}
+enade_historia2 = enade_historia_2017_Sem_NA %>%
+  select(Turno_Graduacao, Raca_Cor, NT_GER) %>%
+  group_by(Turno_Graduacao, Raca_Cor) %>%
+  summarise(
+    Quantidade = n(),
+    MediaNota = mean(NT_GER, na.rm = T),
+    Mediana = median(NT_GER, na.rm = T),
+    CV = sd(NT_GER, na.rm = T) / MediaNota * 100,
+    AmplitudeInterquartil = IQR(NT_GER)
+  ) %>%
+  arrange(Turno_Graduacao, desc(Mediana))
+enade_historia2  %>% kbl %>% kable_styling(full_width = F)
+```
+Ao agrupar por Turno e Raça, vemos que a maioria dos alunos estuda no período da noite, embora as melhores notas sejam de alunos que estudam a tarde.
+
+```{r}
+enade_historia2 = enade_historia_2017_Sem_NA %>%
+  select(Raca_Cor, NT_GER) %>%
+  group_by(Raca_Cor) %>%
+  summarise(
+    Quantidade = n(),
+    MediaNota = mean(NT_GER, na.rm = T),
+    Mediana = median(NT_GER, na.rm = T),
+    CV = sd(NT_GER, na.rm = T) / MediaNota * 100,
+    AmplitudeInterquartil = IQR(NT_GER),
+    assimetria = skewness(NT_GER),
+    curtose = kurtosis(NT_GER)
+  ) %>%
+  arrange(desc(Mediana))
+enade_historia2  %>% kbl %>% kable_styling(full_width = F)
+```
+Quando analisamos somente por Raça/Cor, fica demonstrado que pessoas que se declaram Brancas têm uma média mais alta (45.6), e até 50% destes, ficou, ligeiramente, acima da média (45.8).
+
+Pode-se destacar também a pouca quantidade de estudantes de origem Indígena.
+
+```{r}
+#Histograma
+histograma = ggplot(enade_historia_2017_Sem_NA, aes(x = NT_GER, fill = Raca_Cor)) +
+  geom_histogram() +
+  ggtitle("Gráfico histograma da Nota por raça/cor") +
+  xlab("Notas") +
+  ylab("Frequência simples") +
+  facet_grid( ~ Raca_Cor)
+
+ggplotly(histograma)
+
+boxplot = ggplot(enade_historia_2017_Sem_NA, aes(x = Raca_Cor, y = NT_GER, fill =
+                                       Raca_Cor)) +
+  geom_boxplot() +
+  ggtitle("Gráfico de Box-plot da Nota por raça/cor e turno de estudo") +
+  xlab("Raca / Cor") +
+  ylab("Notas") +
+  facet_grid( ~ Turno_Graduacao) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
+
+
+ggplotly(boxplot)
+```
+```{r}
+grid.arrange(histograma, boxplot, nrow = 2, ncol = 1)
+```
+## Analisando Renda familiar e Raça
+```{r}
+prop.table(table(enade_historia_2017_Sem_NA$Renda_Familiar,
+      enade_historia_2017_Sem_NA$Raca_Cor)) %>% kbl %>% kable_styling()
+```
+```{r}
+enade_historia3 = enade_historia_2017_Sem_NA %>%
+  select(Raca_Cor, Renda_Familiar, NT_GER) %>%
+  group_by(Raca_Cor, Renda_Familiar) %>%
+  summarise(
+    Quantidade = n(),
+    MediaNota = mean(NT_GER, na.rm = T),
+    Mediana = median(NT_GER, na.rm = T),
+    CV = sd(NT_GER, na.rm = T) / MediaNota * 100,
+    AmplitudeInterquartil = IQR(NT_GER),
+    assimetria = skewness(NT_GER),
+    curtose = kurtosis(NT_GER)
+  ) %>%
+  arrange(desc(Mediana))
+enade_historia3  %>% kbl %>% kable_styling(full_width = F)
+```
+Outro ponto que chama atenção é a diferença entre a média das notas gerais de pessoas que se declaram Brancas e com Renda Familiar entre 10 e 30 salários mínimos, com média 55.59 e pessoas que se declaram Indígenas, que, apesar da pouca quantidade, obtiveram média bem abaixo.
+```{r}
+#Histograma
+histograma = ggplot(enade_historia_2017_Sem_NA, aes(x = NT_GER, fill = Renda_Familiar)) +
+  geom_histogram() +
+  ggtitle("Gráfico histograma da Nota por renda familiar do aluno") +
+  xlab("Notas") +
+  ylab("Frequência simples") +
+  facet_grid( ~ Renda_Familiar)
+
+ggplotly(histograma)
+
+boxplot = ggplot(enade_historia_2017_Sem_NA, aes(x = Raca_Cor, y = NT_GER, fill =
+                                       Raca_Cor)) +
+  geom_boxplot() +
+  ggtitle("Gráfico de Box-plot da Nota por raça/cor e renda familiar") +
+  xlab("Raca / Cor") +
+  ylab("Notas") +
+  facet_grid( ~ Renda_Familiar) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
+
+
+ggplotly(boxplot)
+```
