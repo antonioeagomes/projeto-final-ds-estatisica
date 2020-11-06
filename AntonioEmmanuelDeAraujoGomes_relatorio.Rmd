@@ -325,8 +325,8 @@ enade_historia2 = enade_historia_2017_Sem_NA %>%
     Mediana = median(NT_GER, na.rm = T),
     CV = sd(NT_GER, na.rm = T) / MediaNota * 100,
     AmplitudeInterquartil = IQR(NT_GER),
-    assimetria = skewness(NT_GER),
-    curtose = kurtosis(NT_GER)
+    Assimetria = skewness(NT_GER),
+    Curtose = kurtosis(NT_GER)
   ) %>%
   arrange(desc(Mediana))
 enade_historia2  %>% kbl %>% kable_styling(full_width = F)
@@ -362,9 +362,6 @@ boxplot = ggplot(enade_historia_2017_Sem_NA, aes(x = Raca_Cor, y = NT_GER, fill 
 
 ggplotly(boxplot)
 ```
-```{r}
-grid.arrange(histograma, boxplot, nrow = 2, ncol = 1)
-```
 ## Analisando Renda familiar e Raça
 ```{r}
 prop.table(table(enade_historia_2017_Sem_NA$Renda_Familiar,
@@ -380,8 +377,8 @@ enade_historia3 = enade_historia_2017_Sem_NA %>%
     Mediana = median(NT_GER, na.rm = T),
     CV = sd(NT_GER, na.rm = T) / MediaNota * 100,
     AmplitudeInterquartil = IQR(NT_GER),
-    assimetria = skewness(NT_GER),
-    curtose = kurtosis(NT_GER)
+    Assimetria = skewness(NT_GER),
+    Curtose = kurtosis(NT_GER)
   ) %>%
   arrange(desc(Mediana))
 enade_historia3  %>% kbl %>% kable_styling(full_width = F)

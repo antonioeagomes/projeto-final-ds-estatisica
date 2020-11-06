@@ -1,0 +1,244 @@
+---
+title: "Projeto ENADE 2017 - Dashboard"
+author: "Antonio Emmanuel de Araujo Gomes"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+# Setando diretório e importando bibliotecas e pacotes
+knitr::opts_knit$set(root.dir = "~/Documentos/DataScienceFB/Estatistica/projeto-final-ds-estatisica")
+library(flexdashboard)
+library(readr)
+library(ggplot2)
+library(plotly)
+library(psych)
+library(e1071)
+library(dplyr)
+library(Hmisc)
+library(DescTools)
+library(esquisse)
+library(gridExtra)
+library(devtools)
+library(tidyverse)
+library(kableExtra)
+```
+```{r include=FALSE}
+# Importando dados
+enade_2017 = read_csv2("MICRODADOS_ENADE_2017.txt")
+```
+```{r include=FALSE}
+# Filtrando variaveis utilizadas
+enade_filtrado = enade_2017 %>% dplyr::select(
+  NT_OBJ_FG,
+  NT_OBJ_CE,
+  NT_GER,
+  CO_GRUPO,
+  CO_REGIAO_CURSO,
+  QE_I02,
+  CO_TURNO_GRADUACAO,
+  TP_SEXO,
+  QE_I01,
+  QE_I08,
+  QE_I21,
+  QE_I22,
+  QE_I23,
+  NU_IDADE
+)
+```
+```{r include=FALSE}
+# Filtrando o curso escolhido
+historia = enade_filtrado %>% filter(CO_GRUPO == 2402)
+
+# Região
+historia = historia %>%  mutate(
+  Regiao = case_when(
+    CO_REGIAO_CURSO == 1 ~ "Norte",
+    CO_REGIAO_CURSO == 2 ~ "Nordeste",
+    CO_REGIAO_CURSO == 3 ~ "Sudeste",
+    CO_REGIAO_CURSO == 4 ~ "Sul",
+    CO_REGIAO_CURSO == 5 ~ "Centro-Oeste",
+    TRUE ~ as.character(CO_REGIAO_CURSO)
+  )
+)
+# Sexo
+historia = historia %>% mutate(Sexo = case_when (
+  TP_SEXO == "M" ~ "Masculino",
+  TP_SEXO == "F" ~ "Feminino",
+  TRUE ~ as.character(TP_SEXO)
+))
+# Estado civil
+historia = historia %>% mutate(
+  Estado_Civil = case_when(
+    QE_I01 == "A" ~ "Solteiro(a)",
+    QE_I01 == "B" ~ "Casado(a)",
+    QE_I01 == "C" ~ "Separado(a) judicialmente/divorciado(a)",
+    QE_I01 == "D" ~ "Viúvo(a)",
+    QE_I01 == "E" ~ "Outro",
+    TRUE ~ as.character(QE_I01)
+  )
+)
+# Raça / cor
+historia = historia %>% mutate(
+  Raca_Cor = case_when(
+    QE_I02 == "A" ~ "Branca",
+    QE_I02 == "B" ~ "Preta",
+    QE_I02 == "C" ~ "Amarela",
+    QE_I02 == "D" ~ "Parda",
+    QE_I02 == "E" ~ "Indígena",
+    QE_I02 == "F" ~ "Não quero declarar",
+    TRUE ~ as.character(QE_I02)
+  )
+)
+# Período
+historia = historia %>% mutate(
+  Turno_Graduacao = case_when(
+    CO_TURNO_GRADUACAO == 1 ~ "Matutino",
+    CO_TURNO_GRADUACAO == 2 ~ "Vespertino",
+    CO_TURNO_GRADUACAO == 3 ~ "Integral",
+    CO_TURNO_GRADUACAO == 4 ~ "Noturno",
+    TRUE ~ as.character(CO_TURNO_GRADUACAO)
+  )
+)
+# Renda total da família
+historia = historia %>%  mutate(
+  Renda_Familiar = case_when(
+    QE_I08 == "A" ~ "Até 1,5 salário mínimo (até R$ 1.405,50)",
+    QE_I08 == "B" ~ "De 1,5 a 3 salários mínimos (R$ 1.405,51 a R$ 2.811,00)",
+    QE_I08 == "C" ~ "De 3 a 4,5 salários mínimos (R$ 2.811,01 a R$ 4.216,50)",
+    QE_I08 == "D" ~ "De 4,5 a 6 salários mínimos (R$ 4.216,51 a R$ 5.622,00).",
+    QE_I08 == "E" ~ "De 6 a 10 salários mínimos (R$ 5.622,01 a R$ 9.370,00)",
+    QE_I08 == "F" ~ "De 10 a 30 salários mínimos (R$ 9.370,01 a R$ 28.110,00)",
+    QE_I08 == "G" ~ "Acima de 30 salários mínimos (mais de R$ 28.110,00)",
+    TRUE ~ as.character(QE_I08)
+  )
+)
+# Alguém da família concluiu ensino superior
+historia = historia %>% mutate(
+  Alguem_Familia_Ensino_Superior = case_when(
+    QE_I21 == "A" ~ "Sim",
+    QE_I21 == "B" ~ "Não",
+    TRUE ~ as.character(QE_I21)
+  )
+)
+# Quantos livros foram lidos em 2017, exceto os livros relacionados ao curso
+historia = historia %>%  mutate(
+  Livros_Lidos_2017 = case_when(
+    QE_I22 == "A" ~ "Nenhum",
+    QE_I22 == "B" ~ "Um ou dois",
+    QE_I22 == "C" ~ "De três a cinco",
+    QE_I22 == "D" ~ "De seis a oito",
+    QE_I22 == "E" ~ "Mais de oito",
+    TRUE ~ as.character(QE_I22)
+  )
+)
+#  Quantas horas de estudo por semana. Aproximadamente.
+historia = historia %>%  mutate(
+  Horas_Estudo_Semana = case_when(
+    QE_I23 == "A" ~ "Nenhuma, apenas assisto às aulas",
+    QE_I23 == "B" ~ "De uma a três",
+    QE_I23 == "C" ~ "De quatro a sete",
+    QE_I23 == "D" ~ "De oito a doze",
+    QE_I23 == "E" ~ "Mais de doze",
+    TRUE ~ as.character(QE_I23)
+  )
+)
+
+#  Removendo as colunas
+historia$CO_REGIAO_CURSO = NULL
+historia$TP_SEXO = NULL
+historia$QE_I01 = NULL
+historia$QE_I02 = NULL
+historia$QE_I08 = NULL
+historia$QE_I21 = NULL
+historia$QE_I22 = NULL
+historia$QE_I23 = NULL
+historia$CO_TURNO_GRADUACAO = NULL
+
+# Removendo NA
+historia = historia %>% na.omit()
+```
+# Histograma Notas x Sexo e Região
+```{r}
+hstgrm1 = ggplot(historia, aes(x = NT_GER, fill = Regiao)) +
+  geom_histogram() +
+  ggtitle("Gráfico histograma da Nota por Sexo x Regiao") +
+  xlab("Notas") +
+  ylab("Frequência simples") +
+  facet_grid( ~ Sexo)
+
+ggplotly(hstgrm1)
+```
+
+# Boxplot Notas x Sexo x Região
+
+```{r}
+bxplt1 = ggplot(historia, aes(x = Regiao, y = NT_GER, fill =
+                                       Regiao)) +
+  geom_boxplot() +
+  ggtitle("Gráfico de Box-plot da Nota por sexo e região") +
+  xlab("Região") +
+  ylab("Notas") +
+  facet_grid( ~ Sexo) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
+
+
+ggplotly(bxplt1)
+```
+
+# Boxplot Nota x Horas Estudo
+
+```{r}
+bxplt2 = ggplot(historia,
+                aes(x = Horas_Estudo_Semana, y = NT_GER, fill =
+                      Horas_Estudo_Semana)) +
+  geom_boxplot() +
+  ggtitle("Gráfico Box-plot da Nota por tempo de estudo") +
+  xlab("Tempo de estudo") +
+  ylab("Notas") +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
+
+
+ggplotly(bxplt2)
+```
+
+# Gráficos Notas x Livros lidos no ano
+
+```{r}
+hstgrm4 = ggplot(historia, aes(x = NT_GER, fill = Livros_Lidos_2017)) +
+  geom_histogram() +
+  ggtitle("Gráfico histograma da Nota por Quantidade de livros lidos em 2017") +
+  xlab("Notas") +
+  ylab("Frequência simples")
+
+ggplotly(hstgrm4)
+
+bxplt4 = ggplot(historia,
+                aes(x = Livros_Lidos_2017, y = NT_GER, fill =
+                      Livros_Lidos_2017)) +
+  geom_boxplot() +
+  ggtitle("Gráfico Box-plot da Nota por tempo de estudo") +
+  xlab("Quantidade de livros") +
+  ylab("Notas") +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  ))
+
+
+ggplotly(bxplt4)
+
+grid.arrange(hstgrm4, bxplt4, ncol = 2, nrow = 1)
+```
+
